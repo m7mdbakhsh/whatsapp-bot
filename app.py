@@ -1,10 +1,11 @@
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
-import os
 
 app = Flask(__name__)
 
-@app.route('/whatsapp', methods=['POST'])
+force_restart = "v1.0.7"  # ✅ تغيير بسيط يجبر Render يعيد تشغيل السيرفر
+
+@app.route('/bot', methods=['POST'])  # ✅ غيرنا المسار من /whatsapp إلى /bot
 def whatsapp_reply():
     incoming_msg = request.values.get('Body', '').strip()
     response = MessagingResponse()
@@ -40,5 +41,4 @@ def whatsapp_reply():
     return str(response)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run()
