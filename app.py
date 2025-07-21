@@ -3,33 +3,36 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
 
-@app.route("/whatsapp", methods=["POST"])
-def whatsapp_reply():
-    incoming_msg = request.values.get("Body", "").strip()
-    resp = MessagingResponse()
-    msg = resp.message()
+@app.route("/bot", methods=["POST"])
+def bot():
+    incoming_msg = request.values.get('Body', '').strip()
+    response = MessagingResponse()
+    msg = response.message()
 
-    if incoming_msg == "1" or "تقديم" in incoming_msg:
-        msg.body("📩 رابط تقديم فكرة براءة اختراع:\nhttps://docs.google.com/forms/d/e/1FAIpQLSe178sNy2ncQOqN4a8-lJFUUIR4hxshBPc7ijQDJs3r_OCKWQ/viewform?usp=header")
-    elif incoming_msg == "2" or "التواصل" in incoming_msg:
-        msg.body("📞 سيتم تحويلك إلى المختص:\nالدكتور / سعود الواصلي")
-    elif incoming_msg == "3" or "قانونية" in incoming_msg:
-        msg.body("⚖️ سيتم تحويلك إلى المستشار:\nالأستاذ / محمد بخش")
-    elif incoming_msg == "4" or "متابعة" in incoming_msg:
-        msg.body("📌 لمتابعة حالة الطلب، يرجى التواصل مع مسؤول المركز.")
+    if incoming_msg in ['1', '١']:
+        msg.body("رابط تقديم فكرة براءة اختراع:\nhttps://docs.google.com/forms/d/e/1FAIpQLSe178sNy2ncQOqN4a8-lJFUUIR4hxshBPc7ijQDJs3r_OCKWQ/viewform?usp=header")
+    elif incoming_msg in ['2', '٢']:
+        msg.body("للتواصل مع مختص:\nالدكتور / سعود الواصلي")
+    elif incoming_msg in ['3', '٣']:
+        msg.body("للاستفسارات القانونية:\nالأستاذ / محمد بخش")
+    elif incoming_msg in ['4', '٤']:
+        msg.body("لمتابعة الطلبات، يرجى الرد بكلمة: متابعة")
+    elif incoming_msg in ['5', '٥']:
+        msg.body("أفضل 10 جامعات سعودية لعام 2024")
+        msg.media("https://dl.dropboxusercontent.com/scl/fi/yi66daw7bv0swd2ty0v5h/Photo-21-07-2025-8-05-51-AM.png?rlkey=jts7duicisx5uisq1v0dttfi4&st=snrudf7q")
     else:
-        msg.body("""مرحباً بك في مساعد مركز الابتكار بجامعة الملك عبد العزيز 👋🏻
+        msg.body(
+            "أهلًا بك 👋\n"
+            "اختر أحد الخيارات التالية:\n\n"
+            "1. تقديم فكرة براءة اختراع\n"
+            "2. التواصل مع مختص\n"
+            "3. استفسار قانوني\n"
+            "4. متابعة الطلب\n"
+            "5. أفضل 10 جامعات سعودية لعام 2024"
+        )
 
-كيف يمكنني مساعدتك اليوم؟ اختر أحد الخيارات التالية:
-
-1️⃣ تقديم فكرة ابتكارية  
-2️⃣ التواصل مع مختص  
-3️⃣ استشارة قانونية  
-4️⃣ متابعة حالة الطلب
-
-يرجى كتابة رقم الخيار أو نسخه بالكامل.""")
-
-    return str(resp)
+    return str(response)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
+
