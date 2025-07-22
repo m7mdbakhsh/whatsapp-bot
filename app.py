@@ -3,7 +3,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 import requests
 
 app = Flask(__name__)
-force_restart = "v1.1.1"  # تحديث يدوي لنسخة Render
+force_restart = "v1.1.2"  # تحديث يدوي لنسخة Render
 
 # ✅ رابط Google Sheets الخاص بك
 GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzWJBvR1h8mu0EP8kp4_t8xEBa6fOcVefHHbjpg5sSd92KSN8zgHqjxiEL7NpLeygET/exec'
@@ -22,7 +22,7 @@ def save_to_google_sheet(phone, message):
 # ✅ تخزين حالة الطلب (لتتبع رقم 6)
 user_state = {}
 
-@app.route('/whatsapp', methods=['POST'])
+@app.route('/bot', methods=['POST'])  # ✅ تم تغيير المسار هنا فقط
 def whatsapp_reply():
     incoming_msg = request.values.get('Body', '').strip()
     sender_number = request.values.get('From', '').replace('whatsapp:', '')
@@ -39,7 +39,7 @@ def whatsapp_reply():
             msg.body("✅ يوجد حالياً 40 براءة اختراع مسجلة في المملكة العربية السعودية.")
         else:
             msg.body("❌ الرقم السري غير صحيح. حاول مرة أخرى.")
-        user_state.pop(sender_number, None)  # إزالة الحالة بعد التحقق
+        user_state.pop(sender_number, None)
         return str(response)
 
     # خيارات القائمة الرئيسية
