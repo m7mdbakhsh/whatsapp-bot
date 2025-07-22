@@ -4,12 +4,12 @@ import requests
 
 app = Flask(__name__)
 
-force_restart = "v1.0.7"  # ✅ تغيير بسيط يجبر Render يعيد تشغيل السيرفر
+force_restart = "v1.0.7"  # ✅ لإجبار Render على إعادة التشغيل عند التحديث
 
-# ✅ رابط Google Script الفعلي الخاص بك
+# ✅ رابط Google Script الخاص بك (تم نسخه من الخطوة السابقة)
 GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbaawIQ1vxzOh3zx23M2ffUn3cjTx1Xo7Hc-G-91hIK35Vzb0rNW9cdVkZdr8q6tZi/exec'
 
-# ✅ دالة لحفظ الرسائل في Google Sheets
+# ✅ دالة لحفظ البيانات في Google Sheets
 def save_to_google_sheet(phone, message):
     data = {
         'phone': phone,
@@ -20,17 +20,18 @@ def save_to_google_sheet(phone, message):
     except Exception as e:
         print(f"❌ خطأ في الإرسال إلى Google Sheets: {e}")
 
-@app.route('/bot', methods=['POST'])  # ✅ مسار استقبال رسائل واتساب
+@app.route('/bot', methods=['POST'])  # ✅ Twilio Webhook
 def whatsapp_reply():
     incoming_msg = request.values.get('Body', '').strip()
     sender_number = request.values.get('From', '').replace('whatsapp:', '')
 
-    # 🟢 حفظ البيانات في Google Sheets
+    # 🟢 حفظ في Google Sheets
     save_to_google_sheet(sender_number, incoming_msg)
 
     response = MessagingResponse()
     msg = response.message()
 
+    # ✅ الردود حسب الاختيارات
     if incoming_msg in ['1', 'تقديم فكرة ابتكارية']:
         msg.body("🔗 لتقديم فكرة ابتكارية، يرجى تعبئة النموذج التالي:\n"
                  "https://docs.google.com/forms/d/e/1FAIpQLSe178sNy2ncQOqN4a8-lJFUUIR4hxshBPc7ijQDJs3r_OCKWQ/viewform?usp=header")
