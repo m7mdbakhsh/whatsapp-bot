@@ -1,13 +1,33 @@
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
+import requests
 
 app = Flask(__name__)
 
 force_restart = "v1.0.7"  # ✅ تغيير بسيط يجبر Render يعيد تشغيل السيرفر
 
-@app.route('/bot', methods=['POST'])  # ✅ غيرنا المسار من /whatsapp إلى /bot
+# ✅ رابط Google Script الفعلي الخاص بك
+GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbaawIQ1vxzOh3zx23M2ffUn3cjTx1Xo7Hc-G-91hIK35Vzb0rNW9cdVkZdr8q6tZi/exec'
+
+# ✅ دالة لحفظ الرسائل في Google Sheets
+def save_to_google_sheet(phone, message):
+    data = {
+        'phone': phone,
+        'message': message
+    }
+    try:
+        requests.post(GOOGLE_SCRIPT_URL, json=data)
+    except Exception as e:
+        print(f"❌ خطأ في الإرسال إلى Google Sheets: {e}")
+
+@app.route('/bot', methods=['POST'])  # ✅ مسار استقبال رسائل واتساب
 def whatsapp_reply():
     incoming_msg = request.values.get('Body', '').strip()
+    sender_number = request.values.get('From', '').replace('whatsapp:', '')
+
+    # 🟢 حفظ البيانات في Google Sheets
+    save_to_google_sheet(sender_number, incoming_msg)
+
     response = MessagingResponse()
     msg = response.message()
 
