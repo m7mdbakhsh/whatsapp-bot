@@ -2,14 +2,16 @@ from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
 import requests
 import datetime
+import threading
+import time
 
 app = Flask(__name__)
-force_restart = "v1.1.3"  # تحديث يدوي لنسخة Render
+force_restart = "v1.1.4"  # تحديث يدوي
 
 # ✅ رابط Google Sheets الخاص بك
 GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzWJBvR1h8mu0EP8kp4_t8xEBa6fOcVefHHbjpg5sSd92KSN8zgHqjxiEL7NpLeygET/exec'
 
-# ✅ تخزين حالة الطلب (لتتبع رقم 6)
+# ✅ تخزين حالة الطلب
 user_state = {}
 
 # ✅ لحفظ البيانات في Google Sheets
@@ -30,6 +32,16 @@ def ping():
     print(f"✅ Ping received at {now}")
     return f"✅ I'm awake! {now}"
 
+# ✅ Ping داخلي تلقائي
+def auto_ping():
+    while True:
+        try:
+            response = requests.get('https://اسم-سيرفرك.onrender.com/ping')  # غيّر هذا برابطك
+            print(f"🔄 Auto-ping sent: {response.status_code}")
+        except Exception as e:
+            print(f"❌ خطأ في Auto-ping: {e}")
+        time.sleep(120)  # كل دقيقتين
+
 # ✅ المسار الرئيسي للرد على WhatsApp
 @app.route('/whatsapp', methods=['POST'])
 def whatsapp_reply():
@@ -37,7 +49,6 @@ def whatsapp_reply():
         incoming_msg = request.values.get('Body', '').strip()
         sender_number = request.values.get('From', '').replace('whatsapp:', '')
 
-        # حفظ الرسالة في Google Sheets
         save_to_google_sheet(sender_number, incoming_msg)
 
         response = MessagingResponse()
@@ -89,5 +100,7 @@ def whatsapp_reply():
         print(f"❌ خطأ أثناء تنفيذ الكود: {e}")
         return "حدث خطأ في الخادم.", 500
 
+# ✅ بدء auto-ping عند تشغيل التطبيق
 if __name__ == '__main__':
+    threading.Thread(target=auto_ping).start()
     app.run()
