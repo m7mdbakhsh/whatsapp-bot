@@ -11,18 +11,6 @@ force_restart = "v1.1.3"  # تحديث يدوي لنسخة Render
 # ✅ تخزين حالة الطلب
 user_state = {}
 
-# ✅ لحفظ البيانات في Google Sheets (الوظيفة موجودة ولكن بدون رابط)
-def save_to_google_sheet(phone, message):
-    data = {
-        'phone': phone,
-        'message': message
-    }
-    try:
-        # requests.post(GOOGLE_SCRIPT_URL, json=data)  # محذوف مؤقتًا
-        pass
-    except Exception as e:
-        print(f"❌ خطأ في الإرسال إلى Google Sheets: {e}")
-
 # ✅ مسار Ping لإبقاء السيرفر نشط
 @app.route('/ping')
 def ping():
@@ -36,9 +24,6 @@ def whatsapp_reply():
     try:
         incoming_msg = request.values.get('Body', '').strip()
         sender_number = request.values.get('From', '').replace('whatsapp:', '')
-
-        # حفظ الرسالة في Google Sheets (حالياً لا يُنفذ)
-        save_to_google_sheet(sender_number, incoming_msg)
 
         response = MessagingResponse()
         msg = response.message()
