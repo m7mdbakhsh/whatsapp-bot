@@ -8,8 +8,8 @@ import time
 app = Flask(__name__)
 force_restart = "v1.1.3"  # تحديث يدوي لنسخة Render
 
-# ✅ رابط Google Sheets الخاص بك
-GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzWJBvR1h8mu0EP8kp4_t8xEBa6fOcVefHHbjpg5sSd92KSN8zgHqjxiEL7NpLeygET/exec'
+# ✅ رابط Google Sheets (حفظ فقط)
+GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyktvEyk-b6Y4k10FCXsCkOkeAUCgbvURfJIR3UHOEKfanRQzf1QB8rbZXC-4I_ubN5/exec'
 
 # ✅ تخزين حالة الطلب
 user_state = {}
