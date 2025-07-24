@@ -8,20 +8,18 @@ import time
 app = Flask(__name__)
 force_restart = "v1.1.3"  # تحديث يدوي لنسخة Render
 
-# ✅ رابط Google Sheets (حفظ فقط)
-GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyktvEyk-b6Y4k10FCXsCkOkeAUCgbvURfJIR3UHOEKfanRQzf1QB8rbZXC-4I_ubN5/exec'
-
 # ✅ تخزين حالة الطلب
 user_state = {}
 
-# ✅ لحفظ البيانات في Google Sheets
+# ✅ لحفظ البيانات في Google Sheets (الوظيفة موجودة ولكن بدون رابط)
 def save_to_google_sheet(phone, message):
     data = {
         'phone': phone,
         'message': message
     }
     try:
-        requests.post(GOOGLE_SCRIPT_URL, json=data)
+        # requests.post(GOOGLE_SCRIPT_URL, json=data)  # محذوف مؤقتًا
+        pass
     except Exception as e:
         print(f"❌ خطأ في الإرسال إلى Google Sheets: {e}")
 
@@ -39,7 +37,7 @@ def whatsapp_reply():
         incoming_msg = request.values.get('Body', '').strip()
         sender_number = request.values.get('From', '').replace('whatsapp:', '')
 
-        # حفظ الرسالة في Google Sheets
+        # حفظ الرسالة في Google Sheets (حالياً لا يُنفذ)
         save_to_google_sheet(sender_number, incoming_msg)
 
         response = MessagingResponse()
