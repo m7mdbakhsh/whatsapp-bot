@@ -14,7 +14,7 @@ def ping():
     print(f"✅ Ping received at {now}")
     return f"✅ I'm awake! {now}"
 
-@app.route('/whatsup', methods=['POST'])
+@app.route('/bakhsh', methods=['POST'])
 def whatsapp_reply():
     try:
         incoming_msg = request.values.get('Body', '').strip()
