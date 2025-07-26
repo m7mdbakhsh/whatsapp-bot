@@ -7,9 +7,6 @@ import time
 
 app = Flask(__name__)
 user_state = {}
-admin_number = '+966555582182'
-admin_password = '5555'
-admin_otp = '1982'  # OTP ثابت للتجربة
 
 @app.route('/ping')
 def ping():
@@ -17,7 +14,7 @@ def ping():
     print(f"✅ Ping received at {now}")
     return f"✅ I'm awake! {now}"
 
-@app.route('/whatsup', methods=['POST'])  # ← تم إعادة المسار إلى /whatsup بدل /bot فقط
+@app.route('/whatsup', methods=['POST'])
 def whatsapp_reply():
     try:
         incoming_msg = request.values.get('Body', '').strip()
@@ -36,28 +33,6 @@ def whatsapp_reply():
             user_state[sender_number] = 'main_menu'
             return str(response)
 
-        if user_state.get(sender_number) == 'awaiting_otp':
-            if incoming_msg == admin_otp:
-                msg.body("✅ تم التحقق بنجاح، أهلاً بك في لوحة المختص.\n"
-                         "يرجى اختيار الإدارة:\n"
-                         "1. مدير المركز\n"
-                         "2. نائب مدير المركز للابتكار\n"
-                         "3. نائب مدير المركز لنقل التقنية\n"
-                         "4. نائب مدير المركز لتتجير المعرفة\n"
-                         "5. نائب مدير المركز لريادة الأعمال")
-                user_state[sender_number] = 'admin_menu'
-            else:
-                msg.body("❌ رمز التحقق غير صحيح. حاول مرة أخرى.")
-            return str(response)
-
-        if user_state.get(sender_number) == 'awaiting_password':
-            if incoming_msg == admin_password:
-                user_state[sender_number] = 'awaiting_otp'
-                msg.body("🔐 رمز التحقق (OTP) هو: 1982\nيرجى إدخاله للمتابعة.")
-            else:
-                msg.body("❌ الرقم السري غير صحيح. حاول مرة أخرى.")
-            return str(response)
-
         if user_state.get(sender_number) == 'main_menu':
             if incoming_msg == '1':
                 msg.body("🧠 قائمة الزائر / المخترع:\n"
@@ -71,11 +46,13 @@ def whatsapp_reply():
                 return str(response)
 
             elif incoming_msg == '2':
-                if sender_number == admin_number:
-                    msg.body("أهلاً يا محمد بخش 👋🏻\nيرجى إدخال الرقم السري للمتابعة.")
-                    user_state[sender_number] = 'awaiting_password'
-                else:
-                    msg.body("🚫 هذا الخيار مخصص للإدارة فقط.")
+                msg.body("✅ أهلاً بك في لوحة المختص.\nيرجى اختيار الإدارة:\n"
+                         "1. مدير المركز\n"
+                         "2. نائب مدير المركز للابتكار\n"
+                         "3. نائب مدير المركز لنقل التقنية\n"
+                         "4. نائب مدير المركز لتتجير المعرفة\n"
+                         "5. نائب مدير المركز لريادة الأعمال")
+                user_state[sender_number] = 'admin_menu'
                 return str(response)
 
         if user_state.get(sender_number) == 'visitor_menu':
