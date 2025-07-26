@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, Response
 from twilio.twiml.messaging_response import MessagingResponse
 import requests
 import datetime
@@ -31,7 +31,7 @@ def whatsapp_reply():
                      "1. زائر / مخترع\n"
                      "2. إدارة مركز الابتكار وريادة الأعمال")
             user_state[sender_number] = 'main_menu'
-            return str(response)
+            return Response(str(response), mimetype="application/xml")
 
         if user_state.get(sender_number) == 'main_menu':
             if incoming_msg == '1':
@@ -43,7 +43,7 @@ def whatsapp_reply():
                          "5. أسئلة شائعة\n"
                          "6. القائمة الرئيسية")
                 user_state[sender_number] = 'visitor_menu'
-                return str(response)
+                return Response(str(response), mimetype="application/xml")
 
             elif incoming_msg == '2':
                 msg.body("✅ أهلاً بك في لوحة المختص.\nيرجى اختيار الإدارة:\n"
@@ -53,7 +53,7 @@ def whatsapp_reply():
                          "4. نائب مدير المركز لتتجير المعرفة\n"
                          "5. نائب مدير المركز لريادة الأعمال")
                 user_state[sender_number] = 'admin_menu'
-                return str(response)
+                return Response(str(response), mimetype="application/xml")
 
         if user_state.get(sender_number) == 'visitor_menu':
             if incoming_msg == '1':
@@ -74,7 +74,7 @@ def whatsapp_reply():
                 user_state[sender_number] = 'main_menu'
             else:
                 msg.body("❓ يرجى اختيار رقم من القائمة.")
-            return str(response)
+            return Response(str(response), mimetype="application/xml")
 
         if user_state.get(sender_number) == 'admin_menu':
             if incoming_msg == '1':
@@ -89,10 +89,10 @@ def whatsapp_reply():
                 msg.body("أهلاً بك في إدارة: نائب مدير المركز لريادة الأعمال\nالمسؤول: د. حسن علي السقاف")
             else:
                 msg.body("❓ يرجى اختيار رقم من القائمة.")
-            return str(response)
+            return Response(str(response), mimetype="application/xml")
 
         msg.body("❓ يرجى اختيار أحد الأرقام من القائمة.")
-        return str(response)
+        return Response(str(response), mimetype="application/xml")
 
     except Exception as e:
         print(f"❌ خطأ أثناء التنفيذ: {e}")
