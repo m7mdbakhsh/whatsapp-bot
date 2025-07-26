@@ -17,7 +17,7 @@ def ping():
     print(f"✅ Ping received at {now}")
     return f"✅ I'm awake! {now}"
 
-@app.route('/bot', methods=['POST'])
+@app.route('/whatsup', methods=['POST'])  # ← تم تعديل المسار فقط هنا
 def whatsapp_reply():
     try:
         incoming_msg = request.values.get('Body', '').strip()
@@ -25,7 +25,6 @@ def whatsapp_reply():
         response = MessagingResponse()
         msg = response.message()
 
-        # الرد التلقائي لأي رسالة جديدة
         if sender_number not in user_state:
             msg.body("مرحباً بك في مساعد مركز الابتكار بجامعة الملك عبد العزيز 👋🏻\n"
                      "كيف يمكنني مساعدتك اليوم؟ اختر أحد الخيارات التالية:\n"
@@ -34,7 +33,6 @@ def whatsapp_reply():
             user_state[sender_number] = 'main_menu'
             return str(response)
 
-        # التحقق من OTP
         if user_state.get(sender_number) == 'awaiting_otp':
             if incoming_msg == admin_otp:
                 msg.body("✅ تم التحقق بنجاح، أهلاً بك في لوحة المختص.\n"
@@ -49,7 +47,6 @@ def whatsapp_reply():
                 msg.body("❌ رمز التحقق غير صحيح. حاول مرة أخرى.")
             return str(response)
 
-        # التحقق من الرقم السري
         if user_state.get(sender_number) == 'awaiting_password':
             if incoming_msg == admin_password:
                 user_state[sender_number] = 'awaiting_otp'
@@ -58,7 +55,6 @@ def whatsapp_reply():
                 msg.body("❌ الرقم السري غير صحيح. حاول مرة أخرى.")
             return str(response)
 
-        # القائمة الرئيسية
         if user_state.get(sender_number) == 'main_menu':
             if incoming_msg == '1':
                 msg.body("🧠 قائمة الزائر / المخترع:\n"
@@ -79,7 +75,6 @@ def whatsapp_reply():
                     msg.body("🚫 هذا الخيار مخصص للإدارة فقط.")
                 return str(response)
 
-        # قائمة الزائر
         if user_state.get(sender_number) == 'visitor_menu':
             if incoming_msg == '1':
                 msg.body("🔗 لتقديم فكرة ابتكارية:\n"
@@ -101,7 +96,6 @@ def whatsapp_reply():
                 msg.body("❓ يرجى اختيار رقم من القائمة.")
             return str(response)
 
-        # قائمة الإدارة بعد التحقق
         if user_state.get(sender_number) == 'admin_menu':
             if incoming_msg == '1':
                 msg.body("أهلاً بك في إدارة: مدير المركز\nالمسؤول: د. سعود الواصلي")
@@ -117,7 +111,6 @@ def whatsapp_reply():
                 msg.body("❓ يرجى اختيار رقم من القائمة.")
             return str(response)
 
-        # رد افتراضي
         msg.body("❓ يرجى اختيار أحد الأرقام من القائمة.")
         return str(response)
 
