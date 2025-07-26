@@ -17,13 +17,12 @@ def ping():
     print(f"✅ Ping received at {now}")
     return f"✅ I'm awake! {now}"
 
-@app.route('/bot', methods=['POST'])  # ← تم تغيير المسار هنا من /whatsup إلى /bot
+@app.route('/whatsup', methods=['POST'])  # ← تم إعادة المسار إلى /whatsup بدل /bot فقط
 def whatsapp_reply():
     try:
         incoming_msg = request.values.get('Body', '').strip()
         sender_number = request.values.get('From', '').replace('whatsapp:', '')
 
-        # ✅ تم إضافة هذا السطر للتأكد أن الرسالة وصلت
         print(f"✅ تم استلام رسالة من واتساب من الرقم {sender_number}: {incoming_msg}")
 
         response = MessagingResponse()
