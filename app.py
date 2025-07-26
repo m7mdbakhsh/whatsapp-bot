@@ -5,9 +5,7 @@ app = Flask(__name__)
 
 @app.route("/whatsup", methods=["POST"])
 def simple_reply():
+    print("📩 تم استلام رسالة من واتساب!")  # هذا فقط للتجربة
     response = MessagingResponse()
-    response.message("✅ البوت يعمل الآن! أهلاً وسهلاً بك 🌟")
+    response.message("🌞 البوت يعمل الآن! أهلاً وسهلاً بك")
     return str(response)
-
-if __name__ == "__main__":
-    app.run()
