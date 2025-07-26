@@ -6,94 +6,103 @@ import threading
 import time
 
 app = Flask(__name__)
-force_restart = "v1.1.3"  # تحديث يدوي لنسخة Render
-
-# ✅ تخزين حالة الطلب
 user_state = {}
+admin_number = '+966555582182'
+admin_password = '5555'
+admin_otp = '1982'  # OTP ثابت للتجربة
 
-# ✅ مسار Ping لإبقاء السيرفر نشط
 @app.route('/ping')
 def ping():
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"✅ Ping received at {now}")
     return f"✅ I'm awake! {now}"
 
-# ✅ المسار الرئيسي للرد على WhatsApp
 @app.route('/whatsapp', methods=['POST'])
 def whatsapp_reply():
     try:
         incoming_msg = request.values.get('Body', '').strip()
         sender_number = request.values.get('From', '').replace('whatsapp:', '')
-
         response = MessagingResponse()
         msg = response.message()
 
-        # التحقق من الاسم بعد اختيار "7"
-        if user_state.get(sender_number) == 'awaiting_name':
-            name = incoming_msg
-            if name == 'محمد بخش':
-                msg.body("📌 مبرمج بجامعة الملك عبدالعزيز")
-            elif name == 'سعود الواصلي':
-                msg.body("📌 مدير المركز")
-            elif name == 'معتز السلمي':
-                msg.body("📌 طالب، ورقم الجوال 0555582182")
+        # الرد التلقائي لأي رسالة جديدة
+        if sender_number not in user_state:
+            msg.body("مرحباً بك في مساعد مركز الابتكار بجامعة الملك عبد العزيز 👋🏻\n"
+                     "كيف يمكنني مساعدتك اليوم؟ اختر أحد الخيارات التالية:\n"
+                     "1. زائر / مخترع\n"
+                     "2. إدارة مركز الابتكار وريادة الأعمال")
+            user_state[sender_number] = 'main_menu'
+            return str(response)
+
+        # التحقق من OTP
+        if user_state.get(sender_number) == 'awaiting_otp':
+            if incoming_msg == admin_otp:
+                msg.body("✅ تم التحقق بنجاح، أهلاً بك في لوحة المختص.")
             else:
-                msg.body("❌ الاسم غير معروف. حاول مرة أخرى.")
+                msg.body("❌ رمز التحقق غير صحيح. حاول مرة أخرى.")
             user_state.pop(sender_number, None)
             return str(response)
 
+        # التحقق من الرقم السري
         if user_state.get(sender_number) == 'awaiting_password':
-            if incoming_msg == 'bakhsh':
-                msg.body("✅ يوجد حالياً 40 براءة اختراع مسجلة في المملكة العربية السعودية.")
+            if incoming_msg == admin_password:
+                msg.body("🔐 رمز التحقق (OTP) هو: 1982\nيرجى إدخاله للمتابعة.")
+                user_state[sender_number] = 'awaiting_otp'
             else:
                 msg.body("❌ الرقم السري غير صحيح. حاول مرة أخرى.")
-            user_state.pop(sender_number, None)
             return str(response)
 
-        if incoming_msg in ['1', 'تقديم فكرة ابتكارية']:
-            msg.body("🔗 لتقديم فكرة ابتكارية، يرجى تعبئة النموذج التالي:\n"
-                     "https://docs.google.com/forms/d/e/1FAIpQLSe178sNy2ncQOqN4a8-lJFUUIR4hxshBPc7ijQDJs3r_OCKWQ/viewform?usp=header")
+        # القوائم بناءً على الاختيار من القائمة الرئيسية
+        if user_state.get(sender_number) == 'main_menu':
+            if incoming_msg == '1':
+                msg.body("🧠 قائمة الزائر / المخترع:\n"
+                         "1. تقديم فكرة ابتكارية\n"
+                         "2. التواصل مع المختص\n"
+                         "3. استشارة قانونية\n"
+                         "4. متابعة حالة الطلب\n"
+                         "5. أسئلة شائعة\n"
+                         "6. القائمة الرئيسية")
+                user_state[sender_number] = 'visitor_menu'
+                return str(response)
 
-        elif incoming_msg in ['2', 'التواصل مع مختص']:
-            msg.body("📞 سيتم تحويلك إلى المختص: د. سعود الواصلي.")
+            elif incoming_msg == '2':
+                if sender_number == admin_number:
+                    msg.body("أهلاً يا محمد بخش 👋🏻\nيرجى إدخال الرقم السري للمتابعة.")
+                    user_state[sender_number] = 'awaiting_password'
+                else:
+                    msg.body("🚫 هذا الخيار مخصص للإدارة فقط.")
+                return str(response)
 
-        elif incoming_msg in ['3', 'استشارة قانونية']:
-            msg.body("⚖️ سيتم التواصل مع: أ. محمد بخش (مختص الاستشارات القانونية).")
+        # قائمة الزائر
+        if user_state.get(sender_number) == 'visitor_menu':
+            if incoming_msg == '1':
+                msg.body("🔗 لتقديم فكرة ابتكارية:\n"
+                         "https://docs.google.com/forms/d/e/1FAIpQLSe178sNy2ncQOqN4a8-lJFUUIR4hxshBPc7ijQDJs3r_OCKWQ/viewform?usp=header")
+            elif incoming_msg == '2':
+                msg.body("📞 سيتم تحويلك إلى المختص: د. سعود الواصلي.")
+            elif incoming_msg == '3':
+                msg.body("⚖️ سيتم التواصل مع: أ. محمد بخش (الاستشارات القانونية).")
+            elif incoming_msg == '4':
+                msg.body("📋 الرجاء تزويدنا برقم الطلب أو الاسم الثلاثي.")
+            elif incoming_msg == '5':
+                msg.body("⁉️ الأسئلة الشائعة:\n- ما هي براءة الاختراع؟\n- كيف أبدأ؟\n- هل الفكرة قابلة للتسجيل؟")
+            elif incoming_msg == '6':
+                msg.body("مرحباً بك من جديد 👋🏻\n"
+                         "1. زائر / مخترع\n"
+                         "2. إدارة مركز الابتكار وريادة الأعمال")
+                user_state[sender_number] = 'main_menu'
+            else:
+                msg.body("❓ يرجى اختيار رقم من القائمة.")
+            return str(response)
 
-        elif incoming_msg in ['4', 'متابعة حالة الطلب']:
-            msg.body("📋 الرجاء تزويدنا برقم الطلب أو الاسم الثلاثي لتحديث حالة الطلب.")
-
-        elif incoming_msg in ['5', 'أفضل 10 جامعات سعودية']:
-            msg.body("🏅 أفضل 10 جامعات سعودية لعام 2024:\n")
-            msg.media("https://www.dropbox.com/scl/fi/yi66daw7bv0swd2ty0v5h/Photo-21-07-2025-8-05-51-AM.png?rlkey=jts7duicisx5uisq1v0dttfi4&raw=1")
-
-        elif incoming_msg == '6':
-            msg.body("🔒 هذا الخيار يتطلب رقم سري.\nيرجى إدخال الرقم السري للمتابعة:")
-            user_state[sender_number] = 'awaiting_password'
-
-        elif incoming_msg == '7':
-            msg.body("📝 ما اسمك؟")
-            user_state[sender_number] = 'awaiting_name'
-
-        else:
-            msg.body("مرحباً بك في مساعد مركز الابتكار بجامعة الملك عبد العزيز 👋🏻\n\n"
-                     "كيف يمكنني مساعدتك اليوم؟ اختر أحد الخيارات التالية:\n\n"
-                     "🧠 1. تقديم فكرة ابتكارية\n"
-                     "📞 2. التواصل مع مختص\n"
-                     "⚖️ 3. استشارة قانونية\n"
-                     "📋 4. متابعة حالة الطلب\n"
-                     "🏅 5. أفضل 10 جامعات سعودية\n"
-                     "🔒 6. عدد البراءات في السعودية (يتطلب رقم سري)\n"
-                     "📝 7. ما اسمك؟\n\n"
-                     "يرجى كتابة رقم الخيار أو نسخه بالكامل.")
-
+        # رد افتراضي
+        msg.body("❓ يرجى اختيار أحد الأرقام من القائمة.")
         return str(response)
 
     except Exception as e:
-        print(f"❌ خطأ أثناء تنفيذ الكود: {e}")
-        return "حدث خطأ في الخادم.", 500
+        print(f"❌ خطأ أثناء التنفيذ: {e}")
+        return "❌ خطأ في الخادم", 500
 
-# ✅ Ping تلقائي كل 5 دقائق (فقط لو شغلت محلياً أو على Render)
 def keep_alive():
     while True:
         try:
@@ -101,10 +110,9 @@ def keep_alive():
             requests.get('https://whatsapp-bot-bx3b.onrender.com/ping')
             print("✅ تم إرسال Ping")
         except Exception as e:
-            print("❌ حدث خطأ في Ping:", e)
+            print("❌ خطأ في Ping:", e)
         time.sleep(300)
 
-# ✅ تشغيل الكود
 if __name__ == '__main__':
     threading.Thread(target=keep_alive).start()
     app.run()
