@@ -1,140 +1,117 @@
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
-import requests
 import datetime
-import threading
-import time
 
 app = Flask(__name__)
-user_state = {}
-admin_number = '+966555582182'
-admin_password = '5555'
-admin_otp = '1982'  # OTP ثابت للتجربة
 
-@app.route('/ping')
-def ping():
-    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(f"✅ Ping received at {now}")
-    return f"✅ I'm awake! {now}"
+user_states = {}
+admin_phone_number = "+966555582182"
+admin_password = "5555"
+otp_code = "1234"
 
-@app.route('/whatsapp', methods=['POST'])
-def whatsapp_reply():
-    try:
-        incoming_msg = request.values.get('Body', '').strip()
-        sender_number = request.values.get('From', '').replace('whatsapp:', '')
-        response = MessagingResponse()
-        msg = response.message()
+@app.route('/bot', methods=['POST'])
+def bot():
+    incoming_msg = request.values.get('Body', '').strip()
+    sender = request.values.get('From', '')
+    response = MessagingResponse()
+    msg = response.message()
+    current_state = user_states.get(sender, {})
 
-        # الرد التلقائي لأي رسالة جديدة
-        if sender_number not in user_state:
-            msg.body("مرحباً بك في مساعد مركز الابتكار بجامعة الملك عبد العزيز 👋🏻\n"
-                     "كيف يمكنني مساعدتك اليوم؟ اختر أحد الخيارات التالية:\n"
-                     "1. زائر / مخترع\n"
-                     "2. إدارة مركز الابتكار وريادة الأعمال")
-            user_state[sender_number] = 'main_menu'
-            return str(response)
+    def reset_state():
+        user_states[sender] = {}
 
-        # التحقق من OTP
-        if user_state.get(sender_number) == 'awaiting_otp':
-            if incoming_msg == admin_otp:
-                msg.body("✅ تم التحقق بنجاح، أهلاً بك في لوحة المختص.\n"
-                         "يرجى اختيار الإدارة:\n"
-                         "1. مدير المركز\n"
-                         "2. نائب مدير المركز للابتكار\n"
-                         "3. نائب مدير المركز لنقل التقنية\n"
-                         "4. نائب مدير المركز لتتجير المعرفة\n"
-                         "5. نائب مدير المركز لريادة الأعمال")
-                user_state[sender_number] = 'admin_menu'
-            else:
-                msg.body("❌ رمز التحقق غير صحيح. حاول مرة أخرى.")
-            return str(response)
-
-        # التحقق من الرقم السري
-        if user_state.get(sender_number) == 'awaiting_password':
-            if incoming_msg == admin_password:
-                user_state[sender_number] = 'awaiting_otp'
-                msg.body("🔐 رمز التحقق (OTP) هو: 1982\nيرجى إدخاله للمتابعة.")
-            else:
-                msg.body("❌ الرقم السري غير صحيح. حاول مرة أخرى.")
-            return str(response)
-
-        # القائمة الرئيسية
-        if user_state.get(sender_number) == 'main_menu':
-            if incoming_msg == '1':
-                msg.body("🧠 قائمة الزائر / المخترع:\n"
-                         "1. تقديم فكرة ابتكارية\n"
-                         "2. التواصل مع المختص\n"
-                         "3. استشارة قانونية\n"
-                         "4. متابعة حالة الطلب\n"
-                         "5. أسئلة شائعة\n"
-                         "6. القائمة الرئيسية")
-                user_state[sender_number] = 'visitor_menu'
-                return str(response)
-
-            elif incoming_msg == '2':
-                if sender_number == admin_number:
-                    msg.body("أهلاً يا محمد بخش 👋🏻\nيرجى إدخال الرقم السري للمتابعة.")
-                    user_state[sender_number] = 'awaiting_password'
-                else:
-                    msg.body("🚫 هذا الخيار مخصص للإدارة فقط.")
-                return str(response)
-
-        # قائمة الزائر
-        if user_state.get(sender_number) == 'visitor_menu':
-            if incoming_msg == '1':
-                msg.body("🔗 لتقديم فكرة ابتكارية:\n"
-                         "https://docs.google.com/forms/d/e/1FAIpQLSe178sNy2ncQOqN4a8-lJFUUIR4hxshBPc7ijQDJs3r_OCKWQ/viewform?usp=header")
-            elif incoming_msg == '2':
-                msg.body("📞 سيتم تحويلك إلى المختص: د. سعود الواصلي.")
-            elif incoming_msg == '3':
-                msg.body("⚖️ سيتم التواصل مع: أ. محمد بخش (الاستشارات القانونية).")
-            elif incoming_msg == '4':
-                msg.body("📋 الرجاء تزويدنا برقم الطلب أو الاسم الثلاثي.")
-            elif incoming_msg == '5':
-                msg.body("⁉️ الأسئلة الشائعة:\n- ما هي براءة الاختراع؟\n- كيف أبدأ؟\n- هل الفكرة قابلة للتسجيل؟")
-            elif incoming_msg == '6':
-                msg.body("مرحباً بك من جديد 👋🏻\n"
-                         "1. زائر / مخترع\n"
-                         "2. إدارة مركز الابتكار وريادة الأعمال")
-                user_state[sender_number] = 'main_menu'
-            else:
-                msg.body("❓ يرجى اختيار رقم من القائمة.")
-            return str(response)
-
-        # قائمة الإدارة بعد التحقق
-        if user_state.get(sender_number) == 'admin_menu':
-            if incoming_msg == '1':
-                msg.body("أهلاً بك في إدارة: مدير المركز\nالمسؤول: د. سعود الواصلي")
-            elif incoming_msg == '2':
-                msg.body("أهلاً بك في إدارة: نائب مدير المركز للابتكار\nالمسؤولة: د. ليلى أحمد باهمام")
-            elif incoming_msg == '3':
-                msg.body("أهلاً بك في إدارة: نائب مدير المركز لنقل التقنية\n(شاغر حاليًا)")
-            elif incoming_msg == '4':
-                msg.body("أهلاً بك في إدارة: نائب مدير المركز لتتجير المعرفة\nالمسؤول: د. رائد إسماعيل فلمبان")
-            elif incoming_msg == '5':
-                msg.body("أهلاً بك في إدارة: نائب مدير المركز لريادة الأعمال\nالمسؤول: د. حسن علي السقاف")
-            else:
-                msg.body("❓ يرجى اختيار رقم من القائمة.")
-            return str(response)
-
-        # رد افتراضي
-        msg.body("❓ يرجى اختيار أحد الأرقام من القائمة.")
+    if not current_state:
+        msg.body("مرحباً بك في مساعد مركز الابتكار بجامعة الملك عبد العزيز 👋🏻\n"
+                 "كيف يمكنني مساعدتك اليوم؟ اختر أحد الخيارات التالية:\n"
+                 "1. زائر / مخترع\n"
+                 "2. إدارة مركز الابتكار وريادة الأعمال")
+        user_states[sender] = {'stage': 'main_menu'}
         return str(response)
 
-    except Exception as e:
-        print(f"❌ خطأ أثناء التنفيذ: {e}")
-        return "❌ خطأ في الخادم", 500
+    if current_state['stage'] == 'main_menu':
+        if incoming_msg == '1':
+            msg.body("مرحباً بك! يرجى اختيار أحد الخيارات:\n"
+                     "1. تقديم فكرة ابتكارية\n"
+                     "2. تتبع حالة الطلب\n"
+                     "3. التواصل مع مختص")
+            user_states[sender]['stage'] = 'inventor_menu'
+        elif incoming_msg == '2':
+            if sender == f"whatsapp:{admin_phone_number}":
+                msg.body("يرجى إدخال الرقم السري:")
+                user_states[sender]['stage'] = 'enter_password'
+            else:
+                msg.body("هذا الخيار مخصص لإدارة المركز فقط.")
+                reset_state()
+        else:
+            msg.body("يرجى اختيار رقم صحيح (1 أو 2).")
+        return str(response)
 
-def keep_alive():
-    while True:
-        try:
-            print("🔁 إرسال Ping للحفاظ على النشاط...")
-            requests.get('https://whatsapp-bot-bx3b.onrender.com/ping')
-            print("✅ تم إرسال Ping")
-        except Exception as e:
-            print("❌ خطأ في Ping:", e)
-        time.sleep(300)
+    if current_state['stage'] == 'enter_password':
+        if incoming_msg == admin_password:
+            msg.body("يرجى إدخال رمز التحقق (OTP):")
+            user_states[sender]['stage'] = 'verify_otp'
+        else:
+            msg.body("❌ الرقم السري غير صحيح. حاول مرة أخرى.")
+        return str(response)
+
+    if current_state['stage'] == 'verify_otp':
+        if incoming_msg == otp_code:
+            msg.body("✅ تم التحقق بنجاح.\nيرجى اختيار الإدارة:\n"
+                     "1. مدير المركز\n"
+                     "2. نائب مدير المركز للابتكار\n"
+                     "3. نائب مدير المركز لنقل التقنية\n"
+                     "4. نائب مدير المركز لتتجير المعرفة\n"
+                     "5. نائب مدير المركز لريادة الأعمال")
+            user_states[sender]['stage'] = 'select_department'
+        else:
+            msg.body("❌ رمز التحقق غير صحيح.")
+        return str(response)
+
+    if current_state['stage'] == 'select_department':
+        department_names = {
+            '1': 'مدير المركز',
+            '2': 'نائب مدير المركز للابتكار',
+            '3': 'نائب مدير المركز لنقل التقنية',
+            '4': 'نائب مدير المركز لتتجير المعرفة',
+            '5': 'نائب مدير المركز لريادة الأعمال'
+        }
+
+        department_managers = {
+            '1': 'د. سعود الواصلي',
+            '2': 'د. ليلى أحمد باهمام',
+            '3': 'شاغر حالياً',
+            '4': 'د. رائد إسماعيل فلمبان',
+            '5': 'د. حسن علي السقاف'
+        }
+
+        if incoming_msg in department_names:
+            dep = department_names[incoming_msg]
+            manager = department_managers[incoming_msg]
+            msg.body(f"مرحباً بك في إدارة {dep} 👋🏻\n"
+                     f"المسؤول: {manager}")
+            reset_state()
+        else:
+            msg.body("❌ يرجى اختيار رقم من 1 إلى 5.")
+        return str(response)
+
+    if current_state['stage'] == 'inventor_menu':
+        if incoming_msg == '1':
+            msg.body("📝 يرجى تعبئة نموذج تقديم فكرة عبر الرابط التالي:\n"
+                     "https://docs.google.com/forms/d/e/1FAIpQLSe178sNy2ncQOqN4a8-lJFUUIR4hxshBPc7ijQDJs3r_OCKWQ/viewform?usp=header")
+            reset_state()
+        elif incoming_msg == '2':
+            msg.body("🔍 يرجى تزويدنا برقم الطلب لتتبع حالته.")
+            reset_state()
+        elif incoming_msg == '3':
+            msg.body("📞 سيتم تحويلك إلى أحد المختصين قريباً.")
+            reset_state()
+        else:
+            msg.body("❌ يرجى اختيار رقم صحيح من 1 إلى 3.")
+        return str(response)
+
+    msg.body("❌ لم أتمكن من فهم الطلب. يرجى إعادة المحاولة.")
+    reset_state()
+    return str(response)
 
 if __name__ == '__main__':
-    threading.Thread(target=keep_alive).start()
-    app.run()
+    app.run(debug=True)
