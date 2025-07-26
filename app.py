@@ -17,7 +17,7 @@ def ping():
     print(f"✅ Ping received at {now}")
     return f"✅ I'm awake! {now}"
 
-@app.route('/whatsup', methods=['POST'])  # ← تم تعديل المسار فقط هنا
+@app.route('/whatsup', methods=['POST'])  # ← المسار النهائي المطلوب
 def whatsapp_reply():
     try:
         incoming_msg = request.values.get('Body', '').strip()
