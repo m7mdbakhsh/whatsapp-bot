@@ -7,6 +7,18 @@ import time
 
 app = Flask(__name__)
 user_state = {}
+admin_auth = {}
+
+ALLOWED_ADMIN_NUMBER = '+966555582182'
+ADMIN_PASSWORD = '5555'
+ADMIN_OTP = '1234'
+DEPARTMENT_PASSWORDS = {
+    '1': '1111',
+    '2': '2222',
+    '3': '3333',
+    '4': '4444',
+    '5': '5555'
+}
 
 @app.route('/ping')
 def ping():
@@ -33,7 +45,9 @@ def whatsapp_reply():
             user_state[sender_number] = 'main_menu'
             return Response(str(response), mimetype="application/xml")
 
-        if user_state.get(sender_number) == 'main_menu':
+        state = user_state.get(sender_number)
+
+        if state == 'main_menu':
             if incoming_msg == '1':
                 msg.body("🧠 قائمة الزائر / المخترع:\n"
                          "1. تقديم فكرة ابتكارية\n"
@@ -43,19 +57,38 @@ def whatsapp_reply():
                          "5. أسئلة شائعة\n"
                          "6. القائمة الرئيسية")
                 user_state[sender_number] = 'visitor_menu'
-                return Response(str(response), mimetype="application/xml")
-
             elif incoming_msg == '2':
-                msg.body("✅ أهلاً بك في لوحة المختص.\nيرجى اختيار الإدارة:\n"
+                if sender_number != ALLOWED_ADMIN_NUMBER:
+                    msg.body("❌ هذا الخيار مخصص لإدارة المركز فقط.")
+                else:
+                    msg.body("🔒 يرجى إدخال كلمة المرور الخاصة بالإدارة:")
+                    user_state[sender_number] = 'admin_password'
+            else:
+                msg.body("❓ يرجى اختيار رقم من القائمة.")
+            return Response(str(response), mimetype="application/xml")
+
+        if state == 'admin_password':
+            if incoming_msg == ADMIN_PASSWORD:
+                msg.body("✅ كلمة المرور صحيحة.\n📩 الآن، أدخل رمز التحقق OTP:")
+                user_state[sender_number] = 'admin_otp'
+            else:
+                msg.body("❌ كلمة المرور غير صحيحة. حاول مرة أخرى.")
+            return Response(str(response), mimetype="application/xml")
+
+        if state == 'admin_otp':
+            if incoming_msg == ADMIN_OTP:
+                msg.body("✅ تم التحقق بنجاح.\nيرجى اختيار الإدارة:\n"
                          "1. مدير المركز\n"
                          "2. نائب مدير المركز للابتكار\n"
                          "3. نائب مدير المركز لنقل التقنية\n"
                          "4. نائب مدير المركز لتتجير المعرفة\n"
                          "5. نائب مدير المركز لريادة الأعمال")
                 user_state[sender_number] = 'admin_menu'
-                return Response(str(response), mimetype="application/xml")
+            else:
+                msg.body("❌ رمز التحقق غير صحيح. حاول مرة أخرى.")
+            return Response(str(response), mimetype="application/xml")
 
-        if user_state.get(sender_number) == 'visitor_menu':
+        if state == 'visitor_menu':
             if incoming_msg == '1':
                 msg.body("🔗 لتقديم فكرة ابتكارية:\n"
                          "https://docs.google.com/forms/d/e/1FAIpQLSe178sNy2ncQOqN4a8-lJFUUIR4hxshBPc7ijQDJs3r_OCKWQ/viewform?usp=header")
@@ -76,19 +109,32 @@ def whatsapp_reply():
                 msg.body("❓ يرجى اختيار رقم من القائمة.")
             return Response(str(response), mimetype="application/xml")
 
-        if user_state.get(sender_number) == 'admin_menu':
-            if incoming_msg == '1':
-                msg.body("أهلاً بك في إدارة: مدير المركز\nالمسؤول: د. سعود الواصلي")
-            elif incoming_msg == '2':
-                msg.body("أهلاً بك في إدارة: نائب مدير المركز للابتكار\nالمسؤولة: د. ليلى أحمد باهمام")
-            elif incoming_msg == '3':
-                msg.body("أهلاً بك في إدارة: نائب مدير المركز لنقل التقنية\n(شاغر حاليًا)")
-            elif incoming_msg == '4':
-                msg.body("أهلاً بك في إدارة: نائب مدير المركز لتتجير المعرفة\nالمسؤول: د. رائد إسماعيل فلمبان")
-            elif incoming_msg == '5':
-                msg.body("أهلاً بك في إدارة: نائب مدير المركز لريادة الأعمال\nالمسؤول: د. حسن علي السقاف")
+        if state == 'admin_menu':
+            if incoming_msg in ['1', '2', '3', '4', '5']:
+                admin_auth[sender_number] = incoming_msg
+                msg.body("🔐 يرجى إدخال الرقم السري الخاص بهذه الإدارة:")
+                user_state[sender_number] = 'department_auth'
             else:
                 msg.body("❓ يرجى اختيار رقم من القائمة.")
+            return Response(str(response), mimetype="application/xml")
+
+        if state == 'department_auth':
+            dept_choice = admin_auth.get(sender_number)
+            correct_password = DEPARTMENT_PASSWORDS.get(dept_choice)
+            if incoming_msg == correct_password:
+                if dept_choice == '1':
+                    msg.body("✅ إدارة: مدير المركز\nالمسؤول: د. سعود الواصلي")
+                elif dept_choice == '2':
+                    msg.body("✅ إدارة: نائب مدير المركز للابتكار\nالمسؤولة: د. ليلى أحمد باهمام")
+                elif dept_choice == '3':
+                    msg.body("✅ إدارة: نائب مدير المركز لنقل التقنية\n(شاغر حاليًا)")
+                elif dept_choice == '4':
+                    msg.body("✅ إدارة: نائب مدير المركز لتتجير المعرفة\nالمسؤول: د. رائد إسماعيل فلمبان")
+                elif dept_choice == '5':
+                    msg.body("✅ إدارة: نائب مدير المركز لريادة الأعمال\nالمسؤول: د. حسن علي السقاف")
+                user_state[sender_number] = 'admin_menu'
+            else:
+                msg.body("❌ الرقم السري غير صحيح. حاول مرة أخرى.")
             return Response(str(response), mimetype="application/xml")
 
         msg.body("❓ يرجى اختيار أحد الأرقام من القائمة.")
