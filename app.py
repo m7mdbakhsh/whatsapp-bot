@@ -4,6 +4,10 @@ import requests
 import datetime
 import threading
 import time
+import os
+import json
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
 
 app = Flask(__name__)
 user_state = {}
@@ -17,6 +21,31 @@ admin_codes = {
     '4': '4444',
     '5': '5555'
 }
+
+# إعداد Google Sheets API
+SPREADSHEET_ID = "1615-Km7g7xjDLNHEqgPCoJubNNV6I8rVjaH5n9-GlcA"
+RANGE_NAME = "Sheet1!A2:D"  # عدل حسب ورقة العمل ونطاق البيانات
+
+# تحميل بيانات الاعتماد من متغير البيئة
+SERVICE_ACCOUNT_INFO = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
+credentials = service_account.Credentials.from_service_account_info(
+    SERVICE_ACCOUNT_INFO,
+    scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+)
+service = build('sheets', 'v4', credentials=credentials)
+sheet = service.spreadsheets()
+
+def get_status_by_phone(phone):
+    try:
+        result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
+        values = result.get('values', [])
+        for row in values:
+            # نفترض أن رقم الجوال في العمود A (index 0) وحالة الطلب في العمود D (index 3)
+            if len(row) > 3 and row[0] == phone:
+                return row[3]
+    except Exception as e:
+        print(f"❌ خطأ في جلب بيانات Google Sheets: {e}")
+    return None
 
 @app.route('/ping')
 def ping():
@@ -147,7 +176,12 @@ def whatsapp_reply():
             elif incoming_msg == '3':
                 msg.body("⚖️ سيتم التواصل مع: أ. محمد بخش (الاستشارات القانونية).\nللقائمة الرئيسية، اكتب: 0")
             elif incoming_msg == '4':
-                msg.body("📋 الرجاء تزويدنا برقم الطلب أو الاسم الثلاثي.\nللقائمة الرئيسية، اكتب: 0")
+                # هنا نضيف قراءة حالة الطلب من Google Sheets
+                status = get_status_by_phone(sender_number)
+                if status:
+                    msg.body(f"📋 حالة طلبك:\n{status}\nللقائمة الرئيسية، اكتب: 0")
+                else:
+                    msg.body("❌ عذرًا، لم نعثر على حالة طلب مرتبطة برقم جوالك.\nللقائمة الرئيسية، اكتب: 0")
             elif incoming_msg == '5':
                 msg.body("🔗 يمكنك إرسال سؤالك عبر النموذج التالي:\nhttps://docs.google.com/forms/d/e/1FAIpQLScPzx7FdVVLezLoUFxz8VWs0NWgMJc_0X6r5zFot9eehtcPLg/viewform?usp=header\nللقائمة الرئيسية، اكتب: 0")
             elif incoming_msg == '6':
