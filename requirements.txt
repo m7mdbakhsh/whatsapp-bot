@@ -2,3 +2,5 @@ flask
 twilio
 gunicorn
 requests
+gspread
+oauth2client
