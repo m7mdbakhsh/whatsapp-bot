@@ -24,7 +24,7 @@ admin_codes = {
 
 # إعداد Google Sheets API
 SPREADSHEET_ID = "1615-Km7g7xjDLNHEqgPCoJubNNV6I8rVjaH5n9-GlcA"
-RANGE_NAME = "Sheet1!A2:D"  # عدل حسب ورقة العمل ونطاق البيانات
+RANGE_NAME = "Sheet1!A2:F"  # عدل حسب ورقة العمل ونطاق البيانات
 
 # تحميل بيانات الاعتماد من متغير البيئة
 SERVICE_ACCOUNT_INFO = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
@@ -35,17 +35,26 @@ credentials = service_account.Credentials.from_service_account_info(
 service = build('sheets', 'v4', credentials=credentials)
 sheet = service.spreadsheets()
 
+def clean_number(num):
+    # إزالة أي رموز غير الأرقام من رقم الجوال
+    return ''.join(filter(str.isdigit, num))
+
 def get_status_by_phone(phone):
     try:
-        clean_phone = phone.lstrip('+').replace(" ", "")  # تنظيف الرقم من + والفراغات
+        cleaned_phone = clean_number(phone)
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
         values = result.get('values', [])
         for row in values:
-            # نفترض أن رقم الجوال في العمود A (index 0) وحالة الطلب في العمود D (index 3)
-            if len(row) > 3:
-                sheet_phone = row[0].lstrip('+').replace(" ", "")  # تنظيف رقم الجوال من جوجل شيت
-                if sheet_phone == clean_phone:
-                    return row[3]
+            if len(row) >= 6:
+                row_phone_clean = clean_number(row[0])
+                if row_phone_clean == cleaned_phone:
+                    # صياغة رسالة بجميع بيانات الصف (باستثناء رقم الجوال مع التنظيف)
+                    return (f"📋 بيانات طلبك:\n"
+                            f"الاسم: {row[1]}\n"
+                            f"الحالة: {row[2]}\n"
+                            f"تاريخ الطلب: {row[3]}\n"
+                            f"تفاصيل إضافية: {row[4]}\n"
+                            f"ملاحظات: {row[5]}")
     except Exception as e:
         print(f"❌ خطأ في جلب بيانات Google Sheets: {e}")
     return None
@@ -179,10 +188,9 @@ def whatsapp_reply():
             elif incoming_msg == '3':
                 msg.body("⚖️ سيتم التواصل مع: أ. محمد بخش (الاستشارات القانونية).\nللقائمة الرئيسية، اكتب: 0")
             elif incoming_msg == '4':
-                # هنا نضيف قراءة حالة الطلب من Google Sheets
                 status = get_status_by_phone(sender_number)
                 if status:
-                    msg.body(f"📋 حالة طلبك:\n{status}\nللقائمة الرئيسية، اكتب: 0")
+                    msg.body(f"{status}\nللقائمة الرئيسية، اكتب: 0")
                 else:
                     msg.body("❌ عذرًا، لم نعثر على حالة طلب مرتبطة برقم جوالك.\nللقائمة الرئيسية، اكتب: 0")
             elif incoming_msg == '5':
