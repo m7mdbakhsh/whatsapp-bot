@@ -35,22 +35,15 @@ credentials = service_account.Credentials.from_service_account_info(
 service = build('sheets', 'v4', credentials=credentials)
 sheet = service.spreadsheets()
 
-def normalize_phone(phone):
-    phone = phone.strip()
-    if phone.startswith('+'):
-        phone = phone[1:]
-    if phone.startswith('0'):
-        phone = '966' + phone[1:]
-    return phone
-
 def get_status_by_phone(phone):
     try:
-        phone = normalize_phone(phone)
+        # إزالة علامة + لو كانت موجودة في رقم الهاتف
+        clean_phone = phone.lstrip('+')
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
         values = result.get('values', [])
         for row in values:
             # نفترض أن رقم الجوال في العمود A (index 0) وحالة الطلب في العمود D (index 3)
-            if len(row) > 3 and row[0] == phone:
+            if len(row) > 3 and row[0] == clean_phone:
                 return row[3]
     except Exception as e:
         print(f"❌ خطأ في جلب بيانات Google Sheets: {e}")
