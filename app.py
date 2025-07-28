@@ -24,7 +24,7 @@ admin_codes = {
 
 # إعداد Google Sheets API
 SPREADSHEET_ID = "1615-Km7g7xjDLNHEqgPCoJubNNV6I8rVjaH5n9-GlcA"
-RANGE_NAME = "Sheet1!A2:F"  # عدل حسب ورقة العمل ونطاق البيانات
+RANGE_NAME = "Sheet1!A2:E"  # عدل حسب ورقة العمل ونطاق البيانات
 
 # تحميل بيانات الاعتماد من متغير البيئة
 SERVICE_ACCOUNT_INFO = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
@@ -45,16 +45,15 @@ def get_status_by_phone(phone):
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
         values = result.get('values', [])
         for row in values:
-            if len(row) >= 6:
+            if len(row) >= 5:
                 row_phone_clean = clean_number(row[0])
                 if row_phone_clean == cleaned_phone:
-                    # صياغة رسالة بجميع بيانات الصف (باستثناء رقم الجوال مع التنظيف)
+                    # صياغة رسالة بجميع بيانات الصف حسب الأعمدة B، C، D، E
                     return (f"📋 بيانات طلبك:\n"
-                            f"الاسم: {row[1]}\n"
-                            f"الحالة: {row[2]}\n"
-                            f"تاريخ الطلب: {row[3]}\n"
-                            f"تفاصيل إضافية: {row[4]}\n"
-                            f"ملاحظات: {row[5]}")
+                            f"رقم الطلب: {row[1]}\n"
+                            f"اسم المخترع: {row[2]}\n"
+                            f"حالة الطلب: {row[3]}\n"
+                            f"ملاحظات: {row[4]}")
     except Exception as e:
         print(f"❌ خطأ في جلب بيانات Google Sheets: {e}")
     return None
