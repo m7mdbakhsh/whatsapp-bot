@@ -35,8 +35,17 @@ credentials = service_account.Credentials.from_service_account_info(
 service = build('sheets', 'v4', credentials=credentials)
 sheet = service.spreadsheets()
 
+def normalize_phone(phone):
+    phone = phone.strip()
+    if phone.startswith('+'):
+        phone = phone[1:]
+    if phone.startswith('0'):
+        phone = '966' + phone[1:]
+    return phone
+
 def get_status_by_phone(phone):
     try:
+        phone = normalize_phone(phone)
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
         values = result.get('values', [])
         for row in values:
