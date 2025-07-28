@@ -37,14 +37,15 @@ sheet = service.spreadsheets()
 
 def get_status_by_phone(phone):
     try:
-        # إزالة علامة + لو كانت موجودة في رقم الهاتف
-        clean_phone = phone.lstrip('+')
+        clean_phone = phone.lstrip('+').replace(" ", "")  # تنظيف الرقم من + والفراغات
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
         values = result.get('values', [])
         for row in values:
             # نفترض أن رقم الجوال في العمود A (index 0) وحالة الطلب في العمود D (index 3)
-            if len(row) > 3 and row[0] == clean_phone:
-                return row[3]
+            if len(row) > 3:
+                sheet_phone = row[0].lstrip('+').replace(" ", "")  # تنظيف رقم الجوال من جوجل شيت
+                if sheet_phone == clean_phone:
+                    return row[3]
     except Exception as e:
         print(f"❌ خطأ في جلب بيانات Google Sheets: {e}")
     return None
